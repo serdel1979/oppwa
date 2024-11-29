@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayByLink - Generate Payment Link</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .link-display {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #2b7a78;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="button" onclick="generatePaymentLink()">Generate Payment Link</button>
+        <div id="linkDisplay" class="link-display"></div>
+    </div>
+
+    <script>
+        function generatePaymentLink() {
+            fetch('/generate-payment-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: "100.00", cardholderName: "Test Name" }) // Adjust as needed
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.link) {
+                    // Display the link in the linkDisplay div
+                    const linkDisplay = document.getElementById('linkDisplay');
+                    linkDisplay.innerHTML = `<p>Payment Link: <a href="${data.link}" target="_blank">${data.link}</a></p>`;
+                } else {
+                    alert("Failed to generate payment link. Please try again.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+</body>
+</html>

@@ -95,10 +95,13 @@
     });
 
 
-    
-
     app.post('/capture-payment', async (req, res) => {
-        const { paymentId } = req.body; // Obtén el `id` del pago preautorizado
+        const { paymentId, amount, currency } = req.body; // Obtén `amount` y `currency` también
+    
+        // Verifica si los parámetros necesarios existen
+        if (!amount || !currency) {
+            return res.status(400).json({ error: 'Amount and currency are required' });
+        }
     
         try {
             const response = await fetch(`https://eu-test.oppwa.com/v1/payments/${paymentId}`, {
@@ -109,7 +112,9 @@
                 },
                 body: new URLSearchParams({
                     'entityId': '8a8294174b7ecb28014b9699220015ca', // Reemplaza con tu Entity ID
-                    'paymentType': 'CP' // Captura del pago
+                    'paymentType': 'CP', // Captura del pago
+                    'amount': amount,  // El monto que deseas capturar
+                    'currency': currency // La moneda del pago
                 })
             });
     
@@ -127,6 +132,7 @@
             res.status(500).json({ error: 'Failed to capture payment' });
         }
     });
+    
     
 
     app.get('/payment-status/:paymentId', async (req, res) => {

@@ -49,12 +49,21 @@
             word-wrap: break-word;
         }
     </style>
+
 </head>
 <body>
     <div class="container">
         <button class="button" onclick="generatePaymentLink()">Generate Payment Link</button>
         <div id="linkDisplay" class="link-display"></div>
+
+        <button style="margin: 20px; padding: 20px;" class="button" onclick="paymentServToServ()">Capture Payment</button>
+        <div id="paymentCap" class="link-display"></div>
+
+        <button style="margin: 20px; padding: 20px;" class="button" onclick="confirmPayment()">Confirm Payment</button>
+        <div id="paymentStatus" class="payment-status"></div>
+
     </div>
+
 
     <script>
         function generatePaymentLink() {
@@ -75,6 +84,88 @@
             })
             .catch(error => console.error("Error:", error));
         }
+
+        let preauthorizedPaymentId = null;
+
+        function paymentServToServ() {
+            fetch('/payment-server-to-server', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: "100.00", cardholderName: "Test Name" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    console.log("Preauthorization successful:", data);
+                    preauthorizedPaymentId = data.id; // Guardar el id para la captura
+                    document.getElementById('paymentCap').innerText = `Preauthorized Payment ID: ${data.id}`;
+                } else {
+                    console.error("Preauthorization failed:", data);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
+        let lastCapturedPaymentId = null;
+
+      
+        function capturePayment() {
+            if (!preauthorizedPaymentId) {
+                alert("No payment ID found. Preauthorize first!");
+                return;
+            }
+
+            fetch('/capture-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentId: preauthorizedPaymentId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Payment captured:", data);
+                if (data.id) {
+                    lastCapturedPaymentId = data.id; // Guardar el id para la confirmación
+                    console.log("ID CAPTURADO ",lastCapturedPaymentId);
+                    document.getElementById('paymentCap').innerText = `Payment captured successfully: ${data.id}`;
+
+                } else {
+                    console.error("Payment capture failed:", data);
+                    document.getElementById('paymentCap').innerText = 'Error capturing payment.';
+                }
+            })
+            .catch(error => {
+                console.error("Error capturing payment:", error);
+                document.getElementById('paymentCap').innerText = 'Error capturing payment.';
+            });
+        }
+
+
+        function confirmPayment() {
+            if (!lastCapturedPaymentId) {
+                console.error("No payment captured yet!");
+                document.getElementById('paymentStatus').innerText = 'No payment captured to confirm.';
+                return;
+            }
+
+            fetch(`/payment-status/${lastCapturedPaymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.result && data.result.description) {
+                        const status = data.result.description;
+                        document.getElementById('paymentStatus').innerText = `Estado del pago: ${status}`;
+                    } else {
+                        console.error('Error: Invalid response structure from payment status');
+                        document.getElementById('paymentStatus').innerText = 'Error al obtener el estado del pago.';
+                    }
+                })
+                .catch(error => {
+                    console.error("Error confirming payment:", error);
+                    document.getElementById('paymentStatus').innerText = 'Error al confirmar el pago.';
+                });
+        }
+
+
     </script>
 </body>
 </html>
